@@ -1,7 +1,5 @@
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
+import java.sql.*;
 
 /******************************************************************************
  * File:NewJFrame.java
@@ -28,12 +26,75 @@ import java.sql.ResultSet;
  */
 public class Inventory extends javax.swing.JFrame {
 
-       String versionID = "v2.10.10";
+    String versionID = "v2.10.10";
+       
+    public String username = "";
+    
+    
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
     /** Creates new form AddInventoryMainFrame */
-    public Inventory() {
+    public Inventory(final String username) {
         initComponents();
         jLabel1.setText("Inventory Management Application " + versionID);
+        
+        this.username = username;
+        Boolean authenticated = false;
+        try {
+            String sourceURL = "jdbc:mysql://localhost:3306/users";
+            Connection DBConn = DriverManager.getConnection(sourceURL, "root", "");
+            String SQL = String.format("SELECT username, department FROM userdetails WHERE username = '%s'", username);
+            System.out.println(SQL);
+            PreparedStatement stmt = DBConn.prepareStatement(SQL);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                if (rs.getString("department").equals("IT Department")) {
+                    System.out.println(SQL);
+                    authenticated = true;
+                }
+            }
+        } catch (Exception e) {
+                jTextArea1.setText("Error connecting to userlog database" + e);
+        }
+        
+        if(!authenticated) {
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    dispose();
+                    new Signin().setVisible(true);
+                }
+            });
+        }
+            
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                Connection DBConn = null;
+                int executeUpdateVal;
+                
+                try {
+                    String sourceURL = "jdbc:mysql://localhost:3306/users";
+                    DBConn = DriverManager.getConnection(sourceURL, "root", "");
+                    String SQL = String.format("INSERT INTO userlog(username,activity) VALUES ('%s', '%s')",getUsername() , "Logged out");
+                    System.out.println(SQL);
+                    PreparedStatement stmt = DBConn.prepareStatement(SQL);
+                    executeUpdateVal = stmt.executeUpdate();
+                    System.out.println(executeUpdateVal);
+                    
+                } catch (Exception ex) {
+                    System.out.println(ex);
+                    jTextArea1.append("Error inserting value into useractivity table");
+                
+                }
+                
+            }
+        });
     }
 
     /** This method is called from within the constructor to
@@ -241,7 +302,7 @@ public class Inventory extends javax.swing.JFrame {
                                 .addComponent(jSeparator1))))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(29, 29, 29)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jLabel5)
                                 .addGap(5, 5, 5)
@@ -353,9 +414,6 @@ public class Inventory extends javax.swing.JFrame {
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(34, 34, 34))
         );
-
-        jToggleButton1.getAccessibleContext().setAccessibleName("Inventory");
-        jToggleButton2.getAccessibleContext().setAccessibleName("Orders");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -1157,14 +1215,14 @@ public class Inventory extends javax.swing.JFrame {
     }//GEN-LAST:event_jToggleButton1ActionPerformed
 
     private void jToggleButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton2ActionPerformed
-        new Order().setVisible(true);
+        new Order(this.username).setVisible(true);
         this.dispose();
         
         // TODO add your handling code here:
     }//GEN-LAST:event_jToggleButton2ActionPerformed
 
     private void jToggleButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton3ActionPerformed
-        new Shipping().setVisible(true);
+        new Shipping(this.username).setVisible(true);
         this.dispose();
         // TODO add your handling code here:
     }//GEN-LAST:event_jToggleButton3ActionPerformed
@@ -1216,13 +1274,13 @@ public class Inventory extends javax.swing.JFrame {
     /**
     * @param args the command line arguments
     */
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Inventory().setVisible(true);
-            }
-        });
-    }
+//    public static void main(String args[]) {
+//        java.awt.EventQueue.invokeLater(new Runnable() {
+//            public void run() {
+//                new Inventory().setVisible(true);
+//            }
+//        });
+//    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;

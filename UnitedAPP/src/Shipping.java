@@ -21,11 +21,73 @@ import java.sql.*;
 public class Shipping extends javax.swing.JFrame {
     Integer updateOrderID;
     String versionID = "v2.10.10";
+    public String username = "";
+    
+    
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
     
     /** Creates new form NewJFrame */
-    public Shipping() {
+    public Shipping(final String username) {
         initComponents();
         jLabel1.setText("Shipping Application " + versionID);
+        this.username = username;
+        
+        Boolean authenticated = false;
+        try {
+            String sourceURL = "jdbc:mysql://localhost:3306/users";
+            Connection DBConn = DriverManager.getConnection(sourceURL, "root", "");
+            String SQL = String.format("SELECT username, department FROM userdetails WHERE username = '%s'", username);
+            System.out.println(SQL);
+            PreparedStatement stmt = DBConn.prepareStatement(SQL);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                if (rs.getString("department").equals("Shipping Department")) {
+                    System.out.println(SQL);
+                    authenticated = true;
+                }
+            }
+        } catch (Exception e) {
+                jTextArea1.setText("Error connecting to userlog database" + e);
+        }
+        
+        if(!authenticated) {
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    dispose();
+                    new Signin().setVisible(true);
+                }
+            });
+        }
+            
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                Connection DBConn = null;
+                int executeUpdateVal;
+                
+                try {
+                    String sourceURL = "jdbc:mysql://localhost:3306/users";
+                    DBConn = DriverManager.getConnection(sourceURL, "root", "");
+                    String SQL = String.format("INSERT INTO userlog(username,activity) VALUES ('%s', '%s')",getUsername() , "Logged out");
+                    System.out.println(SQL);
+                    PreparedStatement stmt = DBConn.prepareStatement(SQL);
+                    executeUpdateVal = stmt.executeUpdate();
+                    System.out.println(executeUpdateVal);
+                    
+                } catch (Exception ex) {
+                    System.out.println(ex);
+                    jTextArea1.append("Error inserting value into useractivity table");
+                
+                }
+                
+            }
+        });
     }
 
     /** This method is called from within the constructor to
@@ -266,12 +328,12 @@ public class Shipping extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jToggleButton1)
                         .addComponent(jToggleButton2)
-                        .addComponent(jToggleButton3)))
+                        .addComponent(jToggleButton3))
+                    .addComponent(jLabel1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
@@ -408,7 +470,7 @@ public class Shipping extends javax.swing.JFrame {
                 //create a connection to the db - note the default account is "remote"
                 //and the password is "remote_pass" - you will have to set this
                 //account up in your database
-                DBConn = DriverManager.getConnection(sourceURL,"remote","remote_pass");
+                DBConn = DriverManager.getConnection(sourceURL,"root","");
 
             } catch (Exception e) {
 
@@ -594,12 +656,12 @@ public class Shipping extends javax.swing.JFrame {
 
     private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
         // TODO add your handling code here:
-        new Inventory().setVisible(true);
+        new Inventory(this.username).setVisible(true);
         this.dispose();
     }//GEN-LAST:event_jToggleButton1ActionPerformed
 
     private void jToggleButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton2ActionPerformed
-        new Order().setVisible(true);
+        new Order(this.username).setVisible(true);
         this.dispose();
 
         // TODO add your handling code here:
@@ -830,13 +892,13 @@ public class Shipping extends javax.swing.JFrame {
     /**
     * @param args the command line arguments
     */
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Shipping().setVisible(true);
-            }
-        });
-    }
+//    public static void main(String args[]) {
+//        java.awt.EventQueue.invokeLater(new Runnable() {
+//            public void run() {
+//                new Shipping().setVisible(true);
+//            }
+//        });
+//    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
